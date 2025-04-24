@@ -1,0 +1,164 @@
+@startuml Vehicle Maintenance System
+
+' Define the entities
+entity "User" as user {
+  *user_id : INT <<PK>>
+  --
+  username : VARCHAR(50)
+  password : VARCHAR(255)
+  name : VARCHAR(100)
+  phone : VARCHAR(20)
+  email : VARCHAR(100)
+  address : VARCHAR(255)
+  registration_date : DATETIME
+}
+
+entity "Vehicle" as vehicle {
+  *vehicle_id : INT <<PK>>
+  --
+  *user_id : INT <<FK>>
+  license_plate : VARCHAR(20)
+  brand : VARCHAR(50)
+  model : VARCHAR(50)
+  year : INT
+  color : VARCHAR(30)
+  VIN : VARCHAR(50)
+  registration_date : DATETIME
+}
+
+entity "MaintenanceStaff" as staff {
+  *staff_id : INT <<PK>>
+  --
+  username : VARCHAR(50)
+  password : VARCHAR(255)
+  name : VARCHAR(100)
+  specialty : VARCHAR(100)
+  hourly_rate : DECIMAL(10,2)
+  phone : VARCHAR(20)
+  email : VARCHAR(100)
+  hire_date : DATETIME
+}
+
+entity "Administrator" as admin {
+  *admin_id : INT <<PK>>
+  --
+  username : VARCHAR(50)
+  password : VARCHAR(255)
+  name : VARCHAR(100)
+  phone : VARCHAR(20)
+  email : VARCHAR(100)
+  access_level : INT
+}
+
+entity "WorkOrder" as workorder {
+  *order_id : INT <<PK>>
+  --
+  *user_id : INT <<FK>>
+  *vehicle_id : INT <<FK>>
+  *staff_id : INT <<FK>>
+  issue_description : TEXT
+  creation_date : DATETIME
+  status : ENUM('pending', 'assigned', 'in_progress', 'completed', 'cancelled')
+  priority : ENUM('low', 'medium', 'high')
+  estimated_completion : DATETIME
+  actual_completion : DATETIME
+  total_labor_cost : DECIMAL(10,2)
+  total_parts_cost : DECIMAL(10,2)
+  total_cost : DECIMAL(10,2)
+}
+
+entity "RepairRecord" as repair {
+  *repair_id : INT <<PK>>
+  --
+  *order_id : INT <<FK>>
+  *staff_id : INT <<FK>>
+  repair_date : DATETIME
+  repair_description : TEXT
+  labor_hours : DECIMAL(5,2)
+  status : ENUM('started', 'in_progress', 'completed')
+  notes : TEXT
+}
+
+entity "Material" as material {
+  *material_id : INT <<PK>>
+  --
+  name : VARCHAR(100)
+  description : TEXT
+  unit_price : DECIMAL(10,2)
+  current_stock : INT
+  min_stock_level : INT
+  supplier : VARCHAR(100)
+}
+
+entity "MaterialUsage" as usage {
+  *usage_id : INT <<PK>>
+  --
+  *repair_id : INT <<FK>>
+  *material_id : INT <<FK>>
+  quantity : INT
+  cost : DECIMAL(10,2)
+  usage_date : DATETIME
+}
+
+entity "Feedback" as feedback {
+  *feedback_id : INT <<PK>>
+  --
+  *order_id : INT <<FK>>
+  *user_id : INT <<FK>>
+  rating : INT
+  comments : TEXT
+  feedback_date : DATETIME
+  is_urgent : BOOLEAN
+}
+
+entity "PaymentRecord" as payment {
+  *payment_id : INT <<PK>>
+  --
+  *order_id : INT <<FK>>
+  *user_id : INT <<FK>>
+  amount : DECIMAL(10,2)
+  payment_date : DATETIME
+  payment_method : VARCHAR(50)
+  status : ENUM('pending', 'completed', 'failed')
+  transaction_id : VARCHAR(100)
+}
+
+entity "StaffPayment" as staffpay {
+  *payment_id : INT <<PK>>
+  --
+  *staff_id : INT <<FK>>
+  period_start : DATE
+  period_end : DATE
+  hours_worked : DECIMAL(10,2)
+  amount : DECIMAL(10,2)
+  payment_date : DATETIME
+  status : ENUM('pending', 'completed')
+}
+
+entity "AuditLog" as audit {
+  *log_id : INT <<PK>>
+  --
+  action_type : VARCHAR(50)
+  entity_type : VARCHAR(50)
+  entity_id : INT
+  user_type : VARCHAR(20)
+  user_id : INT
+  action_date : DATETIME
+  details : TEXT
+  ip_address : VARCHAR(50)
+}
+
+' Define relationships
+user ||--o{ vehicle : owns
+user ||--o{ workorder : creates
+staff ||--o{ workorder : assigned_to
+workorder ||--o{ repair : contains
+repair ||--o{ usage : uses
+material ||--o{ usage : used_in
+workorder ||--o{ feedback : receives
+workorder ||--o{ payment : has
+staff ||--o{ staffpay : receives
+user ||--o{ feedback : provides
+staff ||--o{ repair : performs
+
+@enduml 
