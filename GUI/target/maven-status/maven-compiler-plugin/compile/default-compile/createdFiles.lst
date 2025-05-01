@@ -1,0 +1,7 @@
+com\car\App.class
+com\car\view\UserMainFrame.class
+com\car\view\RegisterDialog.class
+com\car\view\LoginFrame.class
+com\car\view\AdminMainFrame.class
+com\car\service\BackendService.class
+com\car\view\StaffMainFrame.class

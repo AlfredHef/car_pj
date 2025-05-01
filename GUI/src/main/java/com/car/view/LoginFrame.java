@@ -1,15 +1,39 @@
 package com.car.view;
 
+import com.car.service.BackendService;
+import com.carpj.model.Administrator;
+import com.carpj.model.MaintenanceStaff;
+import com.carpj.model.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
 import javax.swing.*;
 import java.awt.*;
 
+@Component
 public class LoginFrame extends JFrame {
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JComboBox<String> userTypeCombo;
+    
+    @Autowired
+    private BackendService backendService;
+    
+    @Autowired
+    private RegisterDialog registerDialog;
 
     public LoginFrame() {
         initializeUI();
+    }
+    
+    @PostConstruct
+    private void init() {
+        // Spring注入完成后的初始化
+    }
+    
+    public void setBackendService(BackendService backendService) {
+        this.backendService = backendService;
     }
 
     private void initializeUI() {
@@ -69,11 +93,67 @@ public class LoginFrame extends JFrame {
         String password = new String(passwordField.getPassword());
         String userType = (String) userTypeCombo.getSelectedItem();
 
-        // TODO: 实现登录逻辑
-        JOptionPane.showMessageDialog(this, "登录功能待实现", "提示", JOptionPane.INFORMATION_MESSAGE);
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "用户名和密码不能为空", "登录失败", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            if (backendService == null) {
+                JOptionPane.showMessageDialog(this, 
+                    "后端服务尚未初始化，请联系管理员", 
+                    "系统错误", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            Object loggedInUser = null;
+            
+            // 根据选择的用户类型进行不同的登录
+            switch (userType) {
+                case "用户":
+                    User user = backendService.login(username, password);
+                    if (user != null) {
+                        new UserMainFrame(user).setVisible(true);
+                        loggedInUser = user;
+                    }
+                    break;
+                case "维修人员":
+                    MaintenanceStaff staff = backendService.staffLogin(username, password);
+                    if (staff != null) {
+                        new StaffMainFrame(staff).setVisible(true);
+                        loggedInUser = staff;
+                    }
+                    break;
+                case "管理员":
+                    Administrator admin = backendService.adminLogin(username, password);
+                    if (admin != null) {
+                        new AdminMainFrame(admin).setVisible(true);
+                        loggedInUser = admin;
+                    }
+                    break;
+            }
+            
+            if (loggedInUser != null) {
+                // 关闭登录窗口
+                this.dispose();
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "用户名或密码错误，或者用户类型选择不正确", 
+                    "登录失败", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "登录过程中发生错误: " + e.getMessage(), 
+                "错误", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void showRegisterDialog() {
-        new RegisterDialog(this).setVisible(true);
+        if (registerDialog == null) {
+            registerDialog = new RegisterDialog(this);
+            registerDialog.setBackendService(backendService);
+        }
+        registerDialog.setVisible(true);
     }
 } 

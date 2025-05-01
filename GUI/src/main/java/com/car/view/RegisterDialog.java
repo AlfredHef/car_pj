@@ -1,8 +1,16 @@
 package com.car.view;
 
+import com.car.service.BackendService;
+import com.carpj.model.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDateTime;
 
+@Component
 public class RegisterDialog extends JDialog {
     private JTextField usernameField;
     private JPasswordField passwordField;
@@ -11,10 +19,34 @@ public class RegisterDialog extends JDialog {
     private JTextField emailField;
     private JTextField addressField;
     private JComboBox<String> userTypeCombo;
+    
+    @Autowired
+    private BackendService backendService;
+    
+    private JFrame parentFrame;
+
+    // 无参构造函数，供Spring使用
+    public RegisterDialog() {
+        this(null);
+    }
 
     public RegisterDialog(JFrame parent) {
         super(parent, "用户注册", true);
+        this.parentFrame = parent;
         initializeUI();
+    }
+    
+    @PostConstruct
+    private void init() {
+        // Spring注入完成后的初始化
+        if (parentFrame == null) {
+            // 如果是被Spring直接创建，默认设置父窗口
+            setLocationRelativeTo(null);
+        }
+    }
+
+    public void setBackendService(BackendService backendService) {
+        this.backendService = backendService;
     }
 
     private void initializeUI() {
@@ -116,7 +148,41 @@ public class RegisterDialog extends JDialog {
             return;
         }
 
-        // TODO: 实现注册逻辑
-        JOptionPane.showMessageDialog(this, "注册功能待实现", "提示", JOptionPane.INFORMATION_MESSAGE);
+        try {
+            if (backendService == null) {
+                JOptionPane.showMessageDialog(this, 
+                    "后端服务尚未初始化，请联系管理员", 
+                    "系统错误", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // 创建用户对象
+            User user = new User();
+            user.setUsername(username);
+            user.setPassword(password);
+            user.setName(name);
+            user.setPhone(phone);
+            user.setEmail(email);
+            user.setAddress(address);
+            user.setRegistrationDate(LocalDateTime.now());
+            
+            // 注册用户
+            User registeredUser = backendService.register(user);
+            
+            if (registeredUser != null) {
+                JOptionPane.showMessageDialog(this, 
+                    "注册成功！请使用新账号登录。", 
+                    "注册成功", JOptionPane.INFORMATION_MESSAGE);
+                dispose();
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "注册失败，请稍后再试", 
+                    "注册失败", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "注册过程中发生错误: " + e.getMessage(), 
+                "错误", JOptionPane.ERROR_MESSAGE);
+        }
     }
 } 
