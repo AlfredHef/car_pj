@@ -12,10 +12,10 @@ public class Vehicle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "vehicle_id")
-    private Integer id;
+    private Long id;
     
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "user_id")
     private User user;
     
     @Column(name = "license_plate", nullable = false, unique = true, length = 20)

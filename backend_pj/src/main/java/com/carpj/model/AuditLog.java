@@ -11,7 +11,7 @@ public class AuditLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "log_id")
-    private Integer id;
+    private Long id;
     
     @Column(name = "action_type", nullable = false, length = 50)
     private String actionType;
@@ -20,13 +20,13 @@ public class AuditLog {
     private String entityType;
     
     @Column(name = "entity_id", nullable = false)
-    private Integer entityId;
+    private Long entityId;
     
     @Column(name = "user_type", nullable = false, length = 20)
     private String userType;
     
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Long userId;
     
     @Column(name = "action_date")
     private LocalDateTime actionDate;

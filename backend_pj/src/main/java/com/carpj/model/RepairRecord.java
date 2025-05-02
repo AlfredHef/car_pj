@@ -13,7 +13,7 @@ public class RepairRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "repair_id")
-    private Integer id;
+    private Long id;
     
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)

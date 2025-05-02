@@ -12,7 +12,7 @@ public class MaterialUsage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "usage_id")
-    private Integer id;
+    private Long id;
     
     @ManyToOne
     @JoinColumn(name = "repair_id", nullable = false)
@@ -22,8 +22,8 @@ public class MaterialUsage {
     @JoinColumn(name = "material_id", nullable = false)
     private Material material;
     
-    @Column(nullable = false)
-    private Integer quantity;
+    @Column(name = "quantity", nullable = false)
+    private Long quantity;
     
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal cost;
