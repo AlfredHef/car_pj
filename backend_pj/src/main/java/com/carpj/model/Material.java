@@ -12,7 +12,7 @@ public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "material_id")
-    private Integer id;
+    private Long id;
     
     @Column(nullable = false, length = 100)
     private String name;
@@ -24,10 +24,10 @@ public class Material {
     private BigDecimal unitPrice;
     
     @Column(name = "current_stock")
-    private Integer currentStock = 0;
+    private Long currentStock = 0L;
     
     @Column(name = "min_stock_level")
-    private Integer minStockLevel = 5;
+    private Long minStockLevel = 5L;
     
     @Column(length = 100)
     private String supplier;

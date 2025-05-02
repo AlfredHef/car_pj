@@ -14,7 +14,7 @@ public class StaffPayment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "payment_id")
-    private Integer id;
+    private Long id;
     
     @ManyToOne
     @JoinColumn(name = "staff_id", nullable = false)

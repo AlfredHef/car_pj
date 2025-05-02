@@ -12,7 +12,7 @@ public class Feedback {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "feedback_id")
-    private Integer id;
+    private Long id;
     
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
@@ -22,8 +22,8 @@ public class Feedback {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
-    @Column(nullable = false)
-    private Integer rating;
+    @Column(name = "rating", nullable = false)
+    private Long rating;
     
     @Column(columnDefinition = "TEXT")
     private String comments;
