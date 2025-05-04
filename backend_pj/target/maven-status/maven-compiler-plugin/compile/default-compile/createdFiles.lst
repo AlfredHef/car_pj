@@ -1,9 +1,11 @@
+com\carpj\repository\RepairRequestRepository.class
 com\carpj\service\impl\AuthServiceImpl.class
 com\carpj\model\RepairRecord.class
 com\carpj\config\SecurityConfig.class
 com\carpj\model\WorkOrder.class
 com\carpj\service\UserService.class
 com\carpj\repository\UserRepository.class
+com\carpj\service\RepairRequestService.class
 com\carpj\model\Feedback.class
 com\carpj\repository\MaintenanceStaffRepository.class
 com\carpj\model\AuditLog.class
@@ -14,6 +16,7 @@ com\carpj\model\Administrator.class
 com\carpj\model\PaymentRecord$PaymentStatus.class
 com\carpj\service\AuthService.class
 com\carpj\service\impl\UserServiceImpl.class
+com\carpj\service\impl\RepairRequestServiceImpl.class
 com\carpj\repository\WorkOrderRepository.class
 com\carpj\model\StaffPayment.class
 com\carpj\model\Material.class
@@ -28,3 +31,4 @@ com\carpj\model\Vehicle.class
 com\carpj\controller\UserController.class
 com\carpj\model\WorkOrder$Priority.class
 com\carpj\model\RepairRecord$RepairStatus.class
+com\carpj\model\RepairRequest.class

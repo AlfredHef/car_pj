@@ -1,15 +1,24 @@
 package com.car.view;
 
+import com.car.service.BackendService;
 import com.carpj.model.User;
+import com.carpj.model.Vehicle;
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 public class UserMainFrame extends JFrame {
     private JTabbedPane tabbedPane;
     private User currentUser;
+    private BackendService backendService;
     
     // Define UI colors
     private final Color PRIMARY_COLOR = new Color(70, 130, 180); // Steel blue
@@ -18,6 +27,12 @@ public class UserMainFrame extends JFrame {
     private final Color BG_COLOR = new Color(245, 245, 250); // Light grayish blue
     private final Color TEXT_COLOR = new Color(25, 25, 25); // Near black
 
+    // Add new fields for vehicle management
+    private DefaultTableModel vehicleTableModel;
+    private JTable vehicleTable;
+    private JScrollPane vehicleScrollPane;
+    private JPanel vehicleEmptyPanel;
+
     public UserMainFrame() {
         this(null);
     }
@@ -25,6 +40,10 @@ public class UserMainFrame extends JFrame {
     public UserMainFrame(User user) {
         this.currentUser = user;
         initializeUI();
+    }
+    
+    public void setBackendService(BackendService backendService) {
+        this.backendService = backendService;
     }
 
     private void initializeUI() {
@@ -208,22 +227,65 @@ public class UserMainFrame extends JFrame {
         contentPanel.setLayout(new BorderLayout(15, 15));
         contentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
         
-        // TODO: Replace this with actual vehicle information panel
-        JLabel notImplementedLabel = new JLabel("车辆信息功能完善中...", SwingConstants.CENTER);
-        notImplementedLabel.setFont(new Font("Microsoft YaHei", Font.PLAIN, 16));
-        notImplementedLabel.setForeground(new Color(150, 150, 150));
-        contentPanel.add(notImplementedLabel, BorderLayout.CENTER);
-        
-        // Add some UI placeholders to show the design
+        // Create action panel with buttons
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         actionPanel.setOpaque(false);
         JButton addVehicleBtn = createStyledButton("添加车辆", ACCENT_COLOR);
+        addVehicleBtn.addActionListener(e -> openAddVehicleDialog());
+        
         JButton refreshBtn = createStyledButton("刷新", new Color(100, 180, 100));
+        refreshBtn.addActionListener(e -> refreshVehiclesList());
+        
         actionPanel.add(addVehicleBtn);
         actionPanel.add(Box.createHorizontalStrut(10));
         actionPanel.add(refreshBtn);
         
         contentPanel.add(actionPanel, BorderLayout.NORTH);
+        
+        // Create table to display vehicles
+        String[] columnNames = {"车牌号", "品牌", "型号", "年份", "颜色", "操作"};
+        Object[][] data = new Object[0][6]; // Empty data, will be populated dynamically
+        
+        DefaultTableModel tableModel = new DefaultTableModel(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 5; // Only the action column is editable
+            }
+        };
+        
+        JTable vehiclesTable = new JTable(tableModel);
+        vehiclesTable.setFillsViewportHeight(true);
+        vehiclesTable.setRowHeight(35);
+        vehiclesTable.getTableHeader().setFont(new Font("Microsoft YaHei", Font.BOLD, 14));
+        vehiclesTable.setFont(new Font("Microsoft YaHei", Font.PLAIN, 14));
+        
+        // Set custom renderer for the action column
+        vehiclesTable.getColumnModel().getColumn(5).setCellRenderer(new TableButtonRenderer());
+        vehiclesTable.getColumnModel().getColumn(5).setCellEditor(new TableButtonEditor(new JCheckBox(), this));
+        
+        JScrollPane scrollPane = new JScrollPane(vehiclesTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true));
+        
+        // Create empty state panel
+        JPanel emptyPanel = new JPanel(new BorderLayout());
+        emptyPanel.setOpaque(false);
+        JLabel emptyLabel = new JLabel("暂无车辆信息，点击添加车辆添加您的第一辆车", SwingConstants.CENTER);
+        emptyLabel.setFont(new Font("Microsoft YaHei", Font.PLAIN, 16));
+        emptyLabel.setForeground(new Color(150, 150, 150));
+        emptyPanel.add(emptyLabel, BorderLayout.CENTER);
+        
+        // Initially add the empty panel
+        contentPanel.add(emptyPanel, BorderLayout.CENTER);
+        
+        // Store references for later use
+        vehicleTableModel = tableModel;
+        vehicleTable = vehiclesTable;
+        vehicleScrollPane = scrollPane;
+        vehicleEmptyPanel = emptyPanel;
+        
+        // Load vehicles data
+        refreshVehiclesList();
+        
         panel.add(contentPanel, BorderLayout.CENTER);
         
         return panel;
@@ -232,25 +294,64 @@ public class UserMainFrame extends JFrame {
     private JPanel createRepairRequestPanel() {
         JPanel panel = createStyledPanel("维修申请");
         
-        // Create content panel with placeholder
+        // Create content panel
         JPanel contentPanel = new JPanel();
         contentPanel.setOpaque(false);
         contentPanel.setLayout(new BorderLayout(15, 15));
         contentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
         
-        // TODO: Replace this with actual repair request panel
-        JLabel notImplementedLabel = new JLabel("维修申请功能完善中...", SwingConstants.CENTER);
-        notImplementedLabel.setFont(new Font("Microsoft YaHei", Font.PLAIN, 16));
-        notImplementedLabel.setForeground(new Color(150, 150, 150));
-        contentPanel.add(notImplementedLabel, BorderLayout.CENTER);
-        
-        // Add some UI placeholders to show the design
+        // Create action panel with new request button
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         actionPanel.setOpaque(false);
         JButton newRequestBtn = createStyledButton("新建申请", ACCENT_COLOR);
+        newRequestBtn.addActionListener(e -> openNewRepairRequestDialog());
         actionPanel.add(newRequestBtn);
         
+        // Create table to display ongoing repair requests
+        String[] columnNames = {"申请编号", "车辆", "提交日期", "状态", "紧急"};
+        Object[][] data = new Object[0][5]; // Placeholder data, will be populated dynamically
+        
+        JTable requestsTable = new JTable(data, columnNames);
+        requestsTable.setFillsViewportHeight(true);
+        requestsTable.setRowHeight(30);
+        requestsTable.getTableHeader().setFont(new Font("Microsoft YaHei", Font.BOLD, 14));
+        requestsTable.setFont(new Font("Microsoft YaHei", Font.PLAIN, 14));
+        
+        // Set custom renderer for the "紧急" column
+        requestsTable.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                         boolean isSelected, boolean hasFocus,
+                                                         int row, int column) {
+                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (value instanceof Boolean) {
+                    boolean urgent = (Boolean) value;
+                    label.setText(urgent ? "是" : "否");
+                    label.setForeground(urgent ? Color.RED : TEXT_COLOR);
+                }
+                return label;
+            }
+        });
+        
+        JScrollPane scrollPane = new JScrollPane(requestsTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true));
+        
+        JPanel emptyPanel = new JPanel(new BorderLayout());
+        emptyPanel.setOpaque(false);
+        JLabel emptyLabel = new JLabel("暂无维修申请记录", SwingConstants.CENTER);
+        emptyLabel.setFont(new Font("Microsoft YaHei", Font.PLAIN, 16));
+        emptyLabel.setForeground(new Color(150, 150, 150));
+        emptyPanel.add(emptyLabel, BorderLayout.CENTER);
+        
+        // Add components to content panel
         contentPanel.add(actionPanel, BorderLayout.NORTH);
+        
+        // TODO: Replace this placeholder with data from backend
+        // For now, we'll just show the empty state
+        contentPanel.add(emptyPanel, BorderLayout.CENTER);
+        // When data is available:
+        // contentPanel.add(scrollPane, BorderLayout.CENTER);
+        
         panel.add(contentPanel, BorderLayout.CENTER);
         
         return panel;
@@ -284,7 +385,7 @@ public class UserMainFrame extends JFrame {
             JPanel profileCard = new JPanel();
             profileCard.setOpaque(false);
             profileCard.setLayout(new BorderLayout(15, 15));
-            profileCard.setBorder(BorderFactory.createCompoundBorder(
+            profileCard.setBorder(new CompoundBorder(
                     BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
                     new EmptyBorder(25, 25, 25, 25)));
             
@@ -466,7 +567,260 @@ public class UserMainFrame extends JFrame {
                 
         if (choice == JOptionPane.YES_OPTION) {
             dispose();
-            new LoginFrame().setVisible(true);
+            LoginFrame loginFrame = new LoginFrame();
+            if (this.backendService != null) {
+                loginFrame.setBackendService(this.backendService);
+            }
+            loginFrame.setVisible(true);
+        }
+    }
+    
+    private void openNewRepairRequestDialog() {
+        if (currentUser == null) {
+            JOptionPane.showMessageDialog(this, 
+                "无法获取用户信息，请重新登录", 
+                "错误", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        try {
+            RepairRequestDialog dialog = new RepairRequestDialog(this, currentUser);
+            dialog.setBackendService(backendService);
+            dialog.setVisible(true);
+            
+            // TODO: After dialog closes, reload the repair request list to show the new request
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "打开维修申请窗口失败: " + e.getMessage(), 
+                "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void openAddVehicleDialog() {
+        if (currentUser == null) {
+            JOptionPane.showMessageDialog(this, 
+                "无法获取用户信息，请重新登录", 
+                "错误", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        try {
+            VehicleDialog dialog = new VehicleDialog(this, currentUser);
+            dialog.setBackendService(backendService);
+            dialog.setVisible(true);
+            
+            // Refresh the vehicles list after dialog closes
+            refreshVehiclesList();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "打开添加车辆窗口失败: " + e.getMessage(), 
+                "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void openEditVehicleDialog(Vehicle vehicle) {
+        if (currentUser == null) {
+            JOptionPane.showMessageDialog(this, 
+                "无法获取用户信息，请重新登录", 
+                "错误", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        try {
+            VehicleDialog dialog = new VehicleDialog(this, currentUser);
+            dialog.setBackendService(backendService);
+            dialog.setEditMode(vehicle);
+            dialog.setVisible(true);
+            
+            // Refresh the vehicles list after dialog closes
+            refreshVehiclesList();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "打开编辑车辆窗口失败: " + e.getMessage(), 
+                "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void refreshVehiclesList() {
+        if (currentUser == null || backendService == null) {
+            return;
+        }
+        
+        try {
+            List<Vehicle> vehicles = backendService.getUserVehicles(currentUser.getId());
+            
+            // Clear existing data
+            vehicleTableModel.setRowCount(0);
+            
+            if (vehicles == null || vehicles.isEmpty()) {
+                // 检查父容器是否存在并且已经包含scrollPane
+                Container parent = vehicleTable.getParent();
+                if (parent != null) {
+                    // 安全地移除和添加组件
+                    if (parent.getParent() instanceof JScrollPane) {
+                        // 如果表格在滚动面板中，移除滚动面板
+                        Container scrollParent = parent.getParent().getParent();
+                        if (scrollParent != null) {
+                            scrollParent.remove(vehicleScrollPane);
+                            scrollParent.add(vehicleEmptyPanel, BorderLayout.CENTER);
+                            scrollParent.revalidate();
+                            scrollParent.repaint();
+                        }
+                    } else {
+                        // 直接处理父容器
+                        Container contentPane = vehicleScrollPane.getParent();
+                        if (contentPane != null) {
+                            contentPane.remove(vehicleScrollPane);
+                            contentPane.add(vehicleEmptyPanel, BorderLayout.CENTER);
+                            contentPane.revalidate();
+                            contentPane.repaint();
+                        }
+                    }
+                } else {
+                    // 表格还没有添加到UI中，只在模型层面操作
+                    // 无需额外操作，初始状态就是显示emptyPanel
+                }
+            } else {
+                // Populate the table with vehicle data
+                for (Vehicle vehicle : vehicles) {
+                    Object[] row = new Object[6];
+                    row[0] = vehicle.getLicensePlate();
+                    row[1] = vehicle.getBrand();
+                    row[2] = vehicle.getModel();
+                    row[3] = vehicle.getYear() != null ? vehicle.getYear().toString() : "--";
+                    row[4] = vehicle.getColor() != null ? vehicle.getColor() : "--";
+                    row[5] = vehicle; // Store vehicle object for action buttons
+                    
+                    vehicleTableModel.addRow(row);
+                }
+                
+                // 确保scrollPane已经添加到UI中
+                Container parent = vehicleEmptyPanel.getParent();
+                if (parent != null) {
+                    parent.remove(vehicleEmptyPanel);
+                    parent.add(vehicleScrollPane, BorderLayout.CENTER);
+                    parent.revalidate();
+                    parent.repaint();
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "加载车辆信息失败: " + e.getMessage(), 
+                "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void deleteVehicle(Vehicle vehicle) {
+        if (vehicle == null || backendService == null) {
+            return;
+        }
+        
+        int choice = JOptionPane.showConfirmDialog(this,
+                "确定要删除车辆 " + vehicle.getLicensePlate() + " 吗？此操作不可恢复。", 
+                "确认删除",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+                
+        if (choice == JOptionPane.YES_OPTION) {
+            try {
+                boolean success = backendService.deleteVehicle(vehicle.getId());
+                if (success) {
+                    JOptionPane.showMessageDialog(this, 
+                        "车辆已成功删除", 
+                        "删除成功", JOptionPane.INFORMATION_MESSAGE);
+                    refreshVehiclesList();
+                } else {
+                    JOptionPane.showMessageDialog(this, 
+                        "删除车辆失败，请稍后再试", 
+                        "删除失败", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, 
+                    "删除车辆时发生错误: " + e.getMessage(), 
+                    "错误", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    // Inner classes for table button rendering and handling
+    
+    // Custom renderer for button column
+    class TableButtonRenderer extends JPanel implements TableCellRenderer {
+        private JButton editButton = new JButton("编辑");
+        private JButton deleteButton = new JButton("删除");
+        
+        public TableButtonRenderer() {
+            setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+            setOpaque(false);
+            
+            editButton.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+            editButton.setPreferredSize(new Dimension(60, 25));
+            deleteButton.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+            deleteButton.setPreferredSize(new Dimension(60, 25));
+            deleteButton.setForeground(Color.RED);
+            
+            add(editButton);
+            add(deleteButton);
+        }
+        
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, 
+                                                    boolean isSelected, boolean hasFocus, 
+                                                    int row, int column) {
+            return this;
+        }
+    }
+    
+    // Custom editor for button column
+    class TableButtonEditor extends DefaultCellEditor {
+        private JPanel panel;
+        private JButton editButton;
+        private JButton deleteButton;
+        private Vehicle currentVehicle;
+        private UserMainFrame parent;
+        
+        public TableButtonEditor(JCheckBox checkBox, UserMainFrame parent) {
+            super(checkBox);
+            this.parent = parent;
+            
+            panel = new JPanel();
+            panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+            panel.setOpaque(false);
+            
+            editButton = new JButton("编辑");
+            editButton.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+            editButton.setPreferredSize(new Dimension(60, 25));
+            editButton.addActionListener(e -> {
+                fireEditingStopped();
+                if (currentVehicle != null) {
+                    parent.openEditVehicleDialog(currentVehicle);
+                }
+            });
+            
+            deleteButton = new JButton("删除");
+            deleteButton.setFont(new Font("Microsoft YaHei", Font.PLAIN, 12));
+            deleteButton.setPreferredSize(new Dimension(60, 25));
+            deleteButton.setForeground(Color.RED);
+            deleteButton.addActionListener(e -> {
+                fireEditingStopped();
+                if (currentVehicle != null) {
+                    parent.deleteVehicle(currentVehicle);
+                }
+            });
+            
+            panel.add(editButton);
+            panel.add(deleteButton);
+        }
+        
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            currentVehicle = (Vehicle)value;
+            return panel;
+        }
+        
+        @Override
+        public Object getCellEditorValue() {
+            return currentVehicle;
         }
     }
 } 

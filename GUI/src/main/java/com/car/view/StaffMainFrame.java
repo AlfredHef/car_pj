@@ -1,5 +1,6 @@
 package com.car.view;
 
+import com.car.service.BackendService;
 import com.carpj.model.MaintenanceStaff;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -10,6 +11,7 @@ import java.awt.image.BufferedImage;
 public class StaffMainFrame extends JFrame {
     private JTabbedPane tabbedPane;
     private MaintenanceStaff currentStaff;
+    private BackendService backendService;
     
     // Define UI colors
     private final Color PRIMARY_COLOR = new Color(70, 130, 180); // Steel blue
@@ -23,8 +25,21 @@ public class StaffMainFrame extends JFrame {
     }
     
     public StaffMainFrame(MaintenanceStaff staff) {
+        this(staff, null);
+    }
+    
+    public StaffMainFrame(MaintenanceStaff staff, BackendService backendService) {
         this.currentStaff = staff;
+        this.backendService = backendService;
         initializeUI();
+    }
+    
+    public void setBackendService(BackendService backendService) {
+        this.backendService = backendService;
+    }
+    
+    public BackendService getBackendService() {
+        return this.backendService;
     }
 
     private void initializeUI() {
@@ -317,24 +332,35 @@ public class StaffMainFrame extends JFrame {
             };
             avatarLabel.setPreferredSize(new Dimension(80, 80));
             
-            // User name under avatar
-            JLabel nameLabel = new JLabel(currentStaff.getName() + " (维修技师)", SwingConstants.CENTER);
+            // Staff name under avatar
+            JLabel nameLabel = new JLabel(currentStaff.getName(), SwingConstants.CENTER);
             nameLabel.setFont(new Font("Microsoft YaHei", Font.BOLD, 18));
             nameLabel.setForeground(TEXT_COLOR);
             
+            // Add specialty label under name
+            JLabel specialtyLabel = new JLabel(currentStaff.getSpecialty(), SwingConstants.CENTER);
+            specialtyLabel.setFont(new Font("Microsoft YaHei", Font.ITALIC, 14));
+            specialtyLabel.setForeground(new Color(80, 80, 80));
+            
+            JPanel nameSpecialtyPanel = new JPanel();
+            nameSpecialtyPanel.setLayout(new BoxLayout(nameSpecialtyPanel, BoxLayout.Y_AXIS));
+            nameSpecialtyPanel.setOpaque(false);
+            nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            specialtyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            nameSpecialtyPanel.add(nameLabel);
+            nameSpecialtyPanel.add(Box.createVerticalStrut(5));
+            nameSpecialtyPanel.add(specialtyLabel);
+            
             avatarPanel.add(avatarLabel);
-            JPanel namePanel = new JPanel(new BorderLayout());
-            namePanel.setOpaque(false);
-            namePanel.add(nameLabel, BorderLayout.CENTER);
-            avatarPanel.add(namePanel);
+            avatarPanel.add(nameSpecialtyPanel);
             
             // Staff details panel
             JPanel detailsPanel = new JPanel(new GridLayout(6, 2, 15, 15));
             detailsPanel.setOpaque(false);
             
             addDetailField(detailsPanel, "用户名:", currentStaff.getUsername());
-            addDetailField(detailsPanel, "工号:", currentStaff.getSpecialty() != null ? currentStaff.getSpecialty() : "--");
-            addDetailField(detailsPanel, "职位:", "维修技师");
+            addDetailField(detailsPanel, "工种:", currentStaff.getSpecialty());
+            addDetailField(detailsPanel, "时薪:", String.format("%.2f 元/小时", currentStaff.getHourlyRate()));
             addDetailField(detailsPanel, "电话:", currentStaff.getPhone() != null ? currentStaff.getPhone() : "--");
             addDetailField(detailsPanel, "邮箱:", currentStaff.getEmail() != null ? currentStaff.getEmail() : "--");
             addDetailField(detailsPanel, "入职日期:", currentStaff.getHireDate() != null ? 
@@ -386,7 +412,7 @@ public class StaffMainFrame extends JFrame {
             containerPanel.add(profileCard, gbc);
             panel.add(containerPanel, BorderLayout.CENTER);
         } else {
-            JLabel errorLabel = new JLabel("无法获取用户信息", SwingConstants.CENTER);
+            JLabel errorLabel = new JLabel("无法获取维修人员信息", SwingConstants.CENTER);
             errorLabel.setFont(new Font("Microsoft YaHei", Font.BOLD, 16));
             errorLabel.setForeground(Color.RED);
             panel.add(errorLabel, BorderLayout.CENTER);
@@ -467,7 +493,12 @@ public class StaffMainFrame extends JFrame {
                 
         if (choice == JOptionPane.YES_OPTION) {
             dispose();
-            new LoginFrame().setVisible(true);
+            LoginFrame loginFrame = new LoginFrame();
+            // 传递当前窗口的BackendService给新的LoginFrame
+            if (this.backendService != null) {
+                loginFrame.setBackendService(this.backendService);
+            }
+            loginFrame.setVisible(true);
         }
     }
 } 

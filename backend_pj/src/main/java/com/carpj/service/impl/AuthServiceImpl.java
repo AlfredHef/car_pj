@@ -71,6 +71,33 @@ public class AuthServiceImpl implements AuthService {
         log.info("用户注册成功: {}", user.getUsername());
         return savedUser;
     }
+    
+    @Override
+    public MaintenanceStaff staffRegister(MaintenanceStaff staff) {
+        // 检查用户名和邮箱是否可用
+        if (!isUsernameAvailable(staff.getUsername(), "staff")) {
+            log.warn("注册失败: 维修人员用户名已存在 {}", staff.getUsername());
+            throw new IllegalArgumentException("用户名已存在");
+        }
+        
+        if (staff.getEmail() != null && !isEmailAvailable(staff.getEmail(), "staff")) {
+            log.warn("注册失败: 维修人员邮箱已存在 {}", staff.getEmail());
+            throw new IllegalArgumentException("邮箱已存在");
+        }
+        
+        // 加密密码
+        staff.setPassword(encodePassword(staff.getPassword()));
+        
+        // 设置入职时间
+        if (staff.getHireDate() == null) {
+            staff.setHireDate(LocalDateTime.now());
+        }
+        
+        // 保存维修人员
+        MaintenanceStaff savedStaff = staffRepository.save(staff);
+        log.info("维修人员注册成功: {}，工种: {}", staff.getUsername(), staff.getSpecialty());
+        return savedStaff;
+    }
 
     @Override
     public MaintenanceStaff staffLogin(String username, String password) {

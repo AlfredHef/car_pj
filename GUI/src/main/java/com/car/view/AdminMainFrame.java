@@ -1,5 +1,6 @@
 package com.car.view;
 
+import com.car.service.BackendService;
 import com.carpj.model.Administrator;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -10,6 +11,7 @@ import java.awt.image.BufferedImage;
 public class AdminMainFrame extends JFrame {
     private JTabbedPane tabbedPane;
     private Administrator currentAdmin;
+    private BackendService backendService;
     
     // Define UI colors
     private final Color PRIMARY_COLOR = new Color(70, 130, 180); // Steel blue
@@ -24,8 +26,21 @@ public class AdminMainFrame extends JFrame {
     }
     
     public AdminMainFrame(Administrator admin) {
+        this(admin, null);
+    }
+    
+    public AdminMainFrame(Administrator admin, BackendService backendService) {
         this.currentAdmin = admin;
+        this.backendService = backendService;
         initializeUI();
+    }
+    
+    public void setBackendService(BackendService backendService) {
+        this.backendService = backendService;
+    }
+    
+    public BackendService getBackendService() {
+        return this.backendService;
     }
 
     private void initializeUI() {
@@ -517,7 +532,12 @@ public class AdminMainFrame extends JFrame {
                 
         if (choice == JOptionPane.YES_OPTION) {
             dispose();
-            new LoginFrame().setVisible(true);
+            LoginFrame loginFrame = new LoginFrame();
+            // 传递当前窗口的BackendService给新的LoginFrame
+            if (this.backendService != null) {
+                loginFrame.setBackendService(this.backendService);
+            }
+            loginFrame.setVisible(true);
         }
     }
 } 
