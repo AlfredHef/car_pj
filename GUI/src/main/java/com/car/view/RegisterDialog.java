@@ -1,6 +1,7 @@
 package com.car.view;
 
 import com.car.service.BackendService;
+import com.carpj.model.MaintenanceStaff;
 import com.carpj.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -9,6 +10,7 @@ import javax.annotation.PostConstruct;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Component
@@ -20,6 +22,9 @@ public class RegisterDialog extends JDialog {
     private JTextField emailField;
     private JTextField addressField;
     private JComboBox<String> userTypeCombo;
+    private JComboBox<String> specialtyCombo;
+    private JTextField hourlyRateField;
+    private JPanel specialtyPanel;
     
     @Autowired
     private BackendService backendService;
@@ -58,7 +63,7 @@ public class RegisterDialog extends JDialog {
     }
 
     private void initializeUI() {
-        setSize(450, 550);
+        setSize(450, 600);
         setLocationRelativeTo(getOwner());
         setResizable(false);
         
@@ -112,6 +117,8 @@ public class RegisterDialog extends JDialog {
         userTypeCombo = new JComboBox<>(new String[]{"用户", "维修人员", "管理员"});
         userTypeCombo.setFont(new Font("Microsoft YaHei", Font.PLAIN, 14));
         userTypeCombo.setBackground(Color.WHITE);
+        // 添加用户类型改变的监听器
+        userTypeCombo.addActionListener(e -> handleUserTypeChange());
         formPanel.add(userTypeCombo, gbc);
 
         // 用户名输入
@@ -172,6 +179,46 @@ public class RegisterDialog extends JDialog {
         addressField = createStyledTextField();
         formPanel.add(addressField, gbc);
 
+        // 创建维修人员专用面板（默认隐藏）
+        specialtyPanel = new JPanel(new GridBagLayout());
+        specialtyPanel.setOpaque(false);
+        
+        GridBagConstraints specialtyGbc = new GridBagConstraints();
+        specialtyGbc.insets = new Insets(8, 10, 8, 10);
+        specialtyGbc.fill = GridBagConstraints.HORIZONTAL;
+        specialtyGbc.weightx = 1.0;
+        
+        // 工种选择
+        specialtyGbc.gridx = 0;
+        specialtyGbc.gridy = 0;
+        JLabel specialtyLabel = createStyledLabel("工种:");
+        specialtyPanel.add(specialtyLabel, specialtyGbc);
+        
+        specialtyGbc.gridx = 1;
+        specialtyCombo = new JComboBox<>(MaintenanceStaff.SPECIALTY_TYPES);
+        specialtyCombo.setFont(new Font("Microsoft YaHei", Font.PLAIN, 14));
+        specialtyCombo.setBackground(Color.WHITE);
+        specialtyPanel.add(specialtyCombo, specialtyGbc);
+        
+        // 时薪输入
+        specialtyGbc.gridx = 0;
+        specialtyGbc.gridy = 1;
+        JLabel hourlyRateLabel = createStyledLabel("时薪(元/小时):");
+        specialtyPanel.add(hourlyRateLabel, specialtyGbc);
+        
+        specialtyGbc.gridx = 1;
+        hourlyRateField = createStyledTextField();
+        specialtyPanel.add(hourlyRateField, specialtyGbc);
+        
+        // 将维修人员专用面板添加到主面板
+        gbc.gridx = 0;
+        gbc.gridy = 7;
+        gbc.gridwidth = 2;
+        formPanel.add(specialtyPanel, gbc);
+        
+        // 默认隐藏维修人员专用面板
+        specialtyPanel.setVisible(false);
+
         contentPane.add(formPanel, BorderLayout.CENTER);
         
         // Add note about required fields
@@ -205,6 +252,19 @@ public class RegisterDialog extends JDialog {
         buttonPanel.add(buttonRow);
         
         contentPane.add(buttonPanel, BorderLayout.SOUTH);
+    }
+    
+    private void handleUserTypeChange() {
+        String selectedType = (String) userTypeCombo.getSelectedItem();
+        if ("维修人员".equals(selectedType)) {
+            specialtyPanel.setVisible(true);
+        } else {
+            specialtyPanel.setVisible(false);
+        }
+        // 调整对话框大小
+        pack();
+        setSize(new Dimension(450, specialtyPanel.isVisible() ? 650 : 600));
+        setLocationRelativeTo(getOwner());
     }
     
     private JLabel createStyledLabel(String text) {
@@ -279,24 +339,71 @@ public class RegisterDialog extends JDialog {
                 return;
             }
             
-            // 创建用户对象
-            User user = new User();
-            user.setUsername(username);
-            user.setPassword(password);
-            user.setName(name);
-            user.setPhone(phone);
-            user.setEmail(email);
-            user.setAddress(address);
-            user.setRegistrationDate(LocalDateTime.now());
-            
-            // 注册用户
-            User registeredUser = backendService.register(user);
-            
-            if (registeredUser != null) {
-                showSuccessMessage("注册成功！请使用新账号登录。", "注册成功");
-                dispose();
+            // 根据不同的用户类型处理注册
+            if ("维修人员".equals(userType)) {
+                // 获取并验证工种和时薪
+                String specialty = (String) specialtyCombo.getSelectedItem();
+                String hourlyRateStr = hourlyRateField.getText();
+                
+                if (specialty == null || hourlyRateStr.isEmpty()) {
+                    showErrorMessage("维修人员注册需要选择工种并填写时薪", "注册失败");
+                    return;
+                }
+                
+                // 验证时薪格式
+                BigDecimal hourlyRate;
+                try {
+                    hourlyRate = new BigDecimal(hourlyRateStr);
+                    if (hourlyRate.compareTo(BigDecimal.ZERO) <= 0) {
+                        showErrorMessage("时薪必须大于0", "注册失败");
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    showErrorMessage("时薪必须是有效的数字", "注册失败");
+                    return;
+                }
+                
+                // 创建维修人员对象
+                MaintenanceStaff staff = new MaintenanceStaff();
+                staff.setUsername(username);
+                staff.setPassword(password);
+                staff.setName(name);
+                staff.setPhone(phone);
+                staff.setEmail(email);
+                staff.setSpecialty(specialty);
+                staff.setHourlyRate(hourlyRate);
+                staff.setHireDate(LocalDateTime.now());
+                
+                // 注册维修人员
+                MaintenanceStaff registeredStaff = backendService.registerStaff(staff);
+                
+                if (registeredStaff != null) {
+                    showSuccessMessage("注册成功！请使用新账号登录。", "注册成功");
+                    dispose();
+                } else {
+                    showErrorMessage("注册失败，请稍后再试", "注册失败");
+                }
             } else {
-                showErrorMessage("注册失败，请稍后再试", "注册失败");
+                // 普通用户注册流程保持不变
+                // 创建用户对象
+                User user = new User();
+                user.setUsername(username);
+                user.setPassword(password);
+                user.setName(name);
+                user.setPhone(phone);
+                user.setEmail(email);
+                user.setAddress(address);
+                user.setRegistrationDate(LocalDateTime.now());
+                
+                // 注册用户
+                User registeredUser = backendService.register(user);
+                
+                if (registeredUser != null) {
+                    showSuccessMessage("注册成功！请使用新账号登录。", "注册成功");
+                    dispose();
+                } else {
+                    showErrorMessage("注册失败，请稍后再试", "注册失败");
+                }
             }
         } catch (Exception e) {
             showErrorMessage("注册过程中发生错误: " + e.getMessage(), "错误");

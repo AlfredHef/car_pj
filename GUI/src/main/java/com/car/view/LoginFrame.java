@@ -37,6 +37,20 @@ public class LoginFrame extends JFrame {
     @PostConstruct
     private void init() {
         // Spring注入完成后的初始化
+        System.out.println("LoginFrame初始化中...");
+        if (backendService == null) {
+            System.out.println("后端服务未注入，请检查Spring配置");
+        } else {
+            System.out.println("后端服务已成功注入");
+        }
+        
+        if (registerDialog == null) {
+            // 如果未注入，则手动创建
+            registerDialog = new RegisterDialog(this);
+            if (backendService != null) {
+                registerDialog.setBackendService(backendService);
+            }
+        }
     }
     
     public void setBackendService(BackendService backendService) {
@@ -263,21 +277,27 @@ public class LoginFrame extends JFrame {
                 case "用户":
                     User user = backendService.login(username, password);
                     if (user != null) {
-                        new UserMainFrame(user).setVisible(true);
+                        UserMainFrame userFrame = new UserMainFrame(user);
+                        userFrame.setBackendService(backendService);
+                        userFrame.setVisible(true);
                         loggedInUser = user;
                     }
                     break;
                 case "维修人员":
                     MaintenanceStaff staff = backendService.staffLogin(username, password);
                     if (staff != null) {
-                        new StaffMainFrame(staff).setVisible(true);
+                        StaffMainFrame staffFrame = new StaffMainFrame(staff);
+                        staffFrame.setBackendService(backendService);
+                        staffFrame.setVisible(true);
                         loggedInUser = staff;
                     }
                     break;
                 case "管理员":
                     Administrator admin = backendService.adminLogin(username, password);
                     if (admin != null) {
-                        new AdminMainFrame(admin).setVisible(true);
+                        AdminMainFrame adminFrame = new AdminMainFrame(admin);
+                        adminFrame.setBackendService(backendService);
+                        adminFrame.setVisible(true);
                         loggedInUser = admin;
                     }
                     break;
@@ -301,7 +321,11 @@ public class LoginFrame extends JFrame {
     private void showRegisterDialog() {
         if (registerDialog == null) {
             registerDialog = new RegisterDialog(this);
-            registerDialog.setBackendService(backendService);
+            if (backendService != null) {
+                registerDialog.setBackendService(backendService);
+            } else {
+                System.out.println("警告：后端服务未初始化，注册可能无法正常工作");
+            }
         }
         registerDialog.setVisible(true);
     }

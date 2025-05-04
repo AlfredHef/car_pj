@@ -12,9 +12,18 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import javax.swing.SwingUtilities;
 
 @SpringBootApplication
-@ComponentScan({"com.car", "com.carpj.service", "com.carpj.service.impl", "com.carpj.controller"})
-@EntityScan("com.carpj.model")
-@EnableJpaRepositories("com.carpj.repository")
+@ComponentScan(basePackages = {
+    "com.car", 
+    "com.car.service",
+    "com.car.view",
+    "com.carpj.service", 
+    "com.carpj.service.impl", 
+    "com.carpj.controller", 
+    "com.carpj.repository",
+    "com.carpj.config"
+})
+@EntityScan(basePackages = {"com.carpj.model"})
+@EnableJpaRepositories(basePackages = {"com.carpj.repository"})
 public class App {
     public static void main(String[] args) {
         // 启动Spring Boot应用

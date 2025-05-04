@@ -25,6 +25,13 @@ public interface AuthService {
     User userRegister(User user);
     
     /**
+     * 维修人员注册
+     * @param staff 维修人员信息
+     * @return 注册成功返回维修人员对象
+     */
+    MaintenanceStaff staffRegister(MaintenanceStaff staff);
+    
+    /**
      * 维修人员登录
      * @param username 用户名
      * @param password 密码
